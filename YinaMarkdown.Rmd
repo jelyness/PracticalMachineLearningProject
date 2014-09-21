@@ -1,0 +1,66 @@
+---
+title: "Practical Machine Learning-Course Project:Writeup"
+author: "Yina Wei"
+date: "September 21, 2014"
+output: html_document
+---
+
+Background: Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
+
+Purpose: To predict 5 different ways(A,B,C,D,E) based on data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants.
+
+Data: The training data for this project are available here: 
+      https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv .
+      The test data are available here:
+      https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv .
+      The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har.
+
+Step1: Loading and cleaning the Data
+```{r}
+setwd("/Users/jelyness/Documents/Coursera/Practical_Machine_Learning/")  ##Set the working directory
+library(caret)  ##Load packages
+data<-read.csv("pml-training.csv")   ## Read the training data set
+testdata<-read.csv("pml-testing.csv")  ## Read the testing data set
+```
+
+Step2: Cleaning the Data
+```{r}
+subdata<-data[,which(!is.na(data[1,])==TRUE&!data[1,]=="")]        ## Get rid of columns including NA and no values in training data set
+testdata<-testdata[,which(!is.na(testdata[1,])==TRUE&!testdata[1,]=="")]  ## Get rid  of columns including NA and no values in testing data set
+subdata<-subdata[,-7:-1]         ## Remove first seven useless columns
+testdata<-testdata[,-7:-1]       ## Remove first seven useless columns
+```
+
+Step3: Data splitting
+```{r}
+set.seed(100)
+inTrain<-createDataPartition(subdata$classe,p=0.7,list=FALSE)  ## Partition Index
+training<-subdata[inTrain,]         ## training data set
+testing<-subdata[-inTrain,]         ## testing data set
+```
+
+Step 4: Random Forest Model
+```{r}
+## Training the model by random forest with preprocessing
+modFit<-train(classe~.,data=training,preProcess=c("center","scale"),method="rf",Prox=TRUE)  
+```
+
+Step 5: Pridiction 
+```{r}
+predictions=predict(modFit,newdata=testing)
+confusionMatrix(predictions,testing$classe)
+```
+
+Step 6: Out-of-Sample Errors
+The best accuracy at this point is 98.1% and our confusion matrix looks like this for the final model:
+```{r}
+modFit$finalModel$confusion
+```
+
+Step 7: Predicting the Test Sets
+Finally, we can predict the "classe" variables for the Test sets
+```{r}
+answers=predict(modFit,newdata=testdata)
+```
+This analysis returns a 100% accuracy result for the test data set.
+
