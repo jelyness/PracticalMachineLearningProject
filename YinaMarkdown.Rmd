@@ -5,33 +5,53 @@ date: "September 21, 2014"
 output: html_document
 ---
 
-Background: Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
+**Background:** Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
 
-Purpose: To predict 5 different ways(A,B,C,D,E) based on data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants.
+**Purpose:** To predict 5 different ways (A,B,C,D,E) based on data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants.
 
-Data: The training data for this project are available here: 
+**Data:** The training data for this project are available here: 
       https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv .
       The test data are available here:
       https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv .
       The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har.
 
-Step1: Loading and cleaning the Data
+**Step1: Loading the Data**
+
+First, We load the downloaded data sets from local directory:
+
 ```{r}
 setwd("/Users/jelyness/Documents/Coursera/Practical_Machine_Learning/")  ##Set the working directory
 library(caret)  ##Load packages
 data<-read.csv("pml-training.csv")   ## Read the training data set
 testdata<-read.csv("pml-testing.csv")  ## Read the testing data set
+dim(data)
+dim(testdata)
 ```
 
-Step2: Cleaning the Data
+Both data frames have 160 vriables. The train data set contains 19622 observations, and the test data set has 20 observations. 
+
 ```{r}
-subdata<-data[,which(!is.na(data[1,])==TRUE&!data[1,]=="")]        ## Get rid of columns including NA and no values in training data set
-testdata<-testdata[,which(!is.na(testdata[1,])==TRUE&!testdata[1,]=="")]  ## Get rid  of columns including NA and no values in testing data set
+head(data)
+```
+
+We noticed that first 7 columns contain metadata about each measurement, the next 152 columns are the actual accelerometer values, and the last column “classe” variable is the outcome of our predict. We also noticed that a large number of columns includes NA and missing values.
+
+**Step2: Cleaning the Data**
+
+Here, we remove the columns including NA and missing values, and also remove the first 7 columns. 
+
+```{r}
+subdata<-data[,which(!is.na(data[1,])==TRUE&!data[1,]=="")]        ## Get rid of columns including NA and missing values in training data set
+testdata<-testdata[,which(!is.na(testdata[1,])==TRUE&!testdata[1,]=="")]  ## Get rid  of columns including NA and missing values in testing data set
 subdata<-subdata[,-7:-1]         ## Remove first seven useless columns
 testdata<-testdata[,-7:-1]       ## Remove first seven useless columns
 ```
+Now, both of final train and test data have 53 columns.
 
-Step3: Data splitting
+**Step3: Data splitting**
+
+Split traing data into 0.7 of sample for training and 0.3 of sample for validation.
+
 ```{r}
 set.seed(100)
 inTrain<-createDataPartition(subdata$classe,p=0.7,list=FALSE)  ## Partition Index
@@ -39,28 +59,37 @@ training<-subdata[inTrain,]         ## training data set
 testing<-subdata[-inTrain,]         ## testing data set
 ```
 
-Step 4: Random Forest Model
+**Step 4: Random Forest Model**
+
+Here, train the model by random forest with preprocessing in the method.
+
 ```{r}
 ## Training the model by random forest with preprocessing
 modFit<-train(classe~.,data=training,preProcess=c("center","scale"),method="rf",Prox=TRUE)  
 ```
 
-Step 5: Pridiction 
+**Step 5: Validation** 
+
 ```{r}
 predictions=predict(modFit,newdata=testing)
 confusionMatrix(predictions,testing$classe)
 ```
 
-Step 6: Out-of-Sample Errors
-The best accuracy at this point is 98.1% and our confusion matrix looks like this for the final model:
+**Step 6: Out-of-Sample Errors**
+
+The final model of confusion matrix looks like this:
 ```{r}
 modFit$finalModel$confusion
 ```
+The out-of-sample errors is 0.0463.
 
-Step 7: Predicting the Test Sets
+**Step 7: Predicting the Test Sets**
+
 Finally, we can predict the "classe" variables for the Test sets
+
 ```{r}
 answers=predict(modFit,newdata=testdata)
+answers
 ```
-This analysis returns a 100% accuracy result for the test data set.
+This analysis returns a 100% accuracy result for all the test data set.
 
