@@ -67,10 +67,69 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 library(caret)  ##Load packages</code></pre>
 <pre><code>## Loading required package: lattice
 ## Loading required package: ggplot2</code></pre>
-<pre class="r"><code>data&lt;-read.csv(&quot;pml-training.csv&quot;,colClasses=&quot;character&quot;)   ## Read the training data set
-testdata&lt;-read.csv(&quot;pml-testing.csv&quot;,colClasses=&quot;character&quot;)  ## Read the testing data set</code></pre>
+<pre class="r"><code>data&lt;-read.csv(&quot;pml-training.csv&quot;)   ## Read the training data set
+testdata&lt;-read.csv(&quot;pml-testing.csv&quot;)  ## Read the testing data set</code></pre>
 <p>Step2: Cleaning the Data</p>
-<pre><code>## Warning: NAs introduced by coercion</code></pre>
+<pre class="r"><code>subdata&lt;-data[,which(!is.na(data[1,])==TRUE&amp;!data[1,]==&quot;&quot;)]        ## Get rid of columns including NA and no values in training data set
+testdata&lt;-testdata[,which(!is.na(testdata[1,])==TRUE&amp;!testdata[1,]==&quot;&quot;)]  ## Get rid  of columns including NA and no values in testing data set
+subdata&lt;-subdata[,-7:-1]         ## Remove first seven useless columns
+testdata&lt;-testdata[,-7:-1]       ## Remove first seven useless columns</code></pre>
+<p>Step3: Data splitting</p>
+<pre class="r"><code>set.seed(100)
+inTrain&lt;-createDataPartition(subdata$classe,p=0.7,list=FALSE)  ## Partition Index
+training&lt;-subdata[inTrain,]         ## training data set
+testing&lt;-subdata[-inTrain,]         ## testing data set</code></pre>
+<p>Step 4: Random Forest Model</p>
+<pre class="r"><code>## Training the model by random forest with preprocessing
+modFit&lt;-train(classe~.,data=training,preProcess=c(&quot;center&quot;,&quot;scale&quot;),method=&quot;rf&quot;,Prox=TRUE)  </code></pre>
+<pre><code>## Loading required package: randomForest
+## randomForest 4.6-10
+## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<p>Step 5: Pridiction</p>
+<pre class="r"><code>predictions=predict(modFit,newdata=testing)
+confusionMatrix(predictions,testing$classe)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1672    9    0    0    0
+##          B    2 1127    1    0    0
+##          C    0    3 1020   15    3
+##          D    0    0    5  948    1
+##          E    0    0    0    1 1078
+## 
+## Overall Statistics
+##                                         
+##                Accuracy : 0.993         
+##                  95% CI : (0.991, 0.995)
+##     No Information Rate : 0.284         
+##     P-Value [Acc &gt; NIR] : &lt;2e-16        
+##                                         
+##                   Kappa : 0.991         
+##  Mcnemar's Test P-Value : NA            
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity             0.999    0.989    0.994    0.983    0.996
+## Specificity             0.998    0.999    0.996    0.999    1.000
+## Pos Pred Value          0.995    0.997    0.980    0.994    0.999
+## Neg Pred Value          1.000    0.997    0.999    0.997    0.999
+## Prevalence              0.284    0.194    0.174    0.164    0.184
+## Detection Rate          0.284    0.192    0.173    0.161    0.183
+## Detection Prevalence    0.286    0.192    0.177    0.162    0.183
+## Balanced Accuracy       0.998    0.994    0.995    0.991    0.998</code></pre>
+<p>Step 6: Out-of-Sample Errors The best accuracy at this point is 98.1% and our confusion matrix looks like this for the final model:</p>
+<pre class="r"><code>modFit$finalModel$confusion</code></pre>
+<pre><code>##      A    B    C    D    E class.error
+## A 3897    6    1    0    2    0.002304
+## B   20 2628    8    2    0    0.011287
+## C    0   18 2371    7    0    0.010434
+## D    0    2   30 2217    3    0.015542
+## E    0    3    6    8 2508    0.006733</code></pre>
+<p>Step 7: Predicting the Test Sets Finally, we can predict the “classe” variables for the Test sets</p>
+<pre class="r"><code>answers=predict(modFit,newdata=testdata)</code></pre>
+<p>This analysis returns a 100% accuracy result for the test data set.</p>
 
 
 </div>
